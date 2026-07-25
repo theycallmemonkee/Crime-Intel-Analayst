@@ -1,24 +1,8 @@
 name: crime-intel-platform
 
+# Postgres is hosted on Neon (https://neon.tech) — see apps/core-api/.env.example.
+# Neo4j still runs locally; there's no managed alternative wired up for it.
 services:
-  postgres:
-    image: postgis/postgis:16-3.4
-    container_name: cip-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: cip
-      POSTGRES_PASSWORD: cip_dev_password
-      POSTGRES_DB: crime_intel
-    ports:
-      - "55432:5432" # non-standard host port — this machine already runs multiple local Postgres instances on 5432/5433
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cip -d crime_intel"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   neo4j:
     image: neo4j:5-community
     container_name: cip-neo4j
@@ -38,5 +22,4 @@ services:
       retries: 10
 
 volumes:
-  postgres_data:
   neo4j_data:

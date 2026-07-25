@@ -3,7 +3,8 @@
 A prototype/MVP investigation intelligence platform for a state crime
 records bureau — crime records, geospatial intelligence, network/link
 analysis, and statistical prediction over a synthetic Karnataka crime
-dataset. Runs entirely locally via Docker.
+dataset. PostgreSQL is hosted on [Neon](https://neon.tech) (serverless
+Postgres); Neo4j runs locally via Docker.
 
 This project follows an iterative, milestone-based development process.
 Each milestone is documented under [`docs/`](docs/) before implementation
@@ -68,7 +69,7 @@ of these.
 |---|---|
 | Backend framework | [NestJS](https://nestjs.com/) (TypeScript) |
 | ORM / migrations | [Prisma](https://www.prisma.io/) |
-| Relational + spatial database | [PostgreSQL 16](https://www.postgresql.org/) with [PostGIS](https://postgis.net/) |
+| Relational + spatial database | [PostgreSQL](https://www.postgresql.org/) with [PostGIS](https://postgis.net/), hosted on [Neon](https://neon.tech) |
 | Fuzzy search | PostgreSQL `pg_trgm` extension |
 | Graph database | [Neo4j 5](https://neo4j.com/) Community + Graph Data Science plugin |
 | Authentication | JWT (`@nestjs/jwt`, `passport-jwt`), `bcrypt` password hashing |
@@ -106,6 +107,7 @@ and report export uses the browser's native print dialog.
                              ▼                 ▼
               ┌───────────────────┐  ┌───────────────────────┐
               │ PostgreSQL+PostGIS │  │ Neo4j 5 + GDS           │
+              │ (hosted on Neon)   │  │ (local via Docker)      │
               │ crime records,     │  │ suspect/case graph,     │
               │ hotspot clustering,│  │ Louvain community        │
               │ fuzzy search       │  │ detection, ego-graphs    │
@@ -115,15 +117,19 @@ and report export uses the browser's native print dialog.
 The AI/statistics module runs in-process inside `core-api` and reads from
 PostgreSQL only — there is no separate AI service and no external model
 call. The Neo4j graph is populated by a one-time seed script
-(`npm run db:seed:neo4j`, see below) rather than kept live-synced with new
-crimes filed through the API.
+(`npm run db:seed`, which seeds both Postgres and Neo4j — see below) rather
+than kept live-synced with new crimes filed through the API.
 
 ## Installation
 
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 20+
-- [Docker](https://www.docker.com/) with Docker Compose
+- [Docker](https://www.docker.com/) with Docker Compose (for Neo4j)
+- A [Neon](https://neon.tech) account and project (for Postgres) — free tier
+  is enough. The Neon CLI (`npx neonctl`) can create one for you:
+  `npx neonctl init --agent` walks through org/project selection and writes
+  a `.neon` context file at the repo root.
 
 ### Setup
 
@@ -140,17 +146,23 @@ cp apps/core-api/.env.example apps/core-api/.env
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-The defaults work out of the box with the bundled Docker Compose services —
-note that Postgres is mapped to host port `55432` (not the default `5432`)
-to avoid clashing with a local Postgres install; adjust `DATABASE_URL` if
-that's not a concern on your machine.
+Fill in `apps/core-api/.env`'s `DATABASE_URL` (pooled) and `DIRECT_URL`
+(unpooled — used for migrations) from your Neon project:
+
+```bash
+npx neonctl connection-string --pooled --prisma   # -> DATABASE_URL
+npx neonctl connection-string --prisma            # -> DIRECT_URL
+```
+
+The Neo4j defaults work out of the box with the bundled Docker Compose
+service.
 
 ## Running locally
 
 ```bash
-npm run docker:up                               # Postgres+PostGIS and Neo4j
-npm run db:migrate                              # first time only — applies Prisma migrations
-npm run db:seed                                 # synthetic Karnataka dataset — seeds both Postgres and Neo4j
+npm run docker:up                               # Neo4j
+npm run db:migrate                              # first time only — applies Prisma migrations to Neon
+npm run db:seed                                 # synthetic Karnataka dataset — seeds both Neon and Neo4j
 npm run dev:core-api                            # http://localhost:3000
 npm run dev --workspace apps/web                # http://localhost:3001 (falls back if 3000 is taken)
 ```
@@ -223,7 +235,7 @@ crime-intel-platform/
 │       │   └── lib/                # api client, auth context, types
 │       └── .env.example
 ├── infra/
-│   └── docker-compose.yml         # Postgres+PostGIS and Neo4j services
+│   └── docker-compose.yml         # Neo4j (Postgres is hosted on Neon)
 ├── docs/                          # milestone-by-milestone design notes
 ├── CONTRIBUTING.md
 ├── LICENSE
