@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Environment variables (keep .env.example tracked)
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test / coverage
+coverage/
+*.lcov
+
+# Prisma generated client (default output lives in node_modules, kept here as a safeguard for custom output paths)
+apps/*/generated/
+apps/*/prisma/generated/
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# Docker
+infra/**/pgdata/
+infra/**/*.volume/
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Cache directories
+.cache/
+.eslintcache
+.turbo/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Generated reports / artifacts
+*.pdf
+*.zip
+reports-output/

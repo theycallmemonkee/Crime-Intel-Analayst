@@ -1,0 +1,652 @@
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --border: #dde1e6;
+  --text: #1a1d23;
+  --text-muted: #5b6270;
+  --primary: #1e3a5f;
+  --primary-dark: #16293f;
+  --accent: #2f6fed;
+  --danger: #c0392b;
+  --success: #1f8a55;
+  --warning: #b9770e;
+
+  /* Chart palette — from the dataviz skill's validated reference palette
+     (references/palette.md), CVD-checked via scripts/validate_palette.js.
+     --chart-sequential is the single-hue fill for magnitude bars/lines
+     (category/district/station rankings, trends). --chart-status-* is a
+     validated 4-color categorical subset, used only for the investigation
+     status breakdown, in a fixed order that never changes with filters. */
+  --chart-sequential: #2a78d6;
+  --chart-sequential-soft: #cde2fb;
+  --chart-status-reported: #eda100;
+  --chart-status-investigation: #2a78d6;
+  --chart-status-chargesheeted: #4a3aa7;
+  --chart-status-closed: #1baf7a;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #c3c2b7;
+  --delta-good: #006300;
+  --delta-bad: #b3261e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  height: 56px;
+}
+
+.topbar-brand {
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
+.topbar-nav {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.topbar-nav a {
+  color: #dbe6f5;
+  font-size: 0.92rem;
+}
+.topbar-nav a:hover {
+  color: white;
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #cfe0f5;
+}
+
+.role-badge {
+  background: var(--accent);
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+button.link-button {
+  background: none;
+  border: none;
+  color: #dbe6f5;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+}
+button.link-button:hover {
+  color: white;
+  text-decoration: underline;
+}
+
+.content {
+  flex: 1;
+  padding: 1.75rem 2rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.page-header h1 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover {
+  filter: brightness(1.08);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn.secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn.danger {
+  background: var(--danger);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+th,
+td {
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+tbody tr:hover {
+  background: #f9fafb;
+}
+
+.filters {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  align-items: flex-end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.field label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: white;
+  color: var(--text);
+}
+
+textarea {
+  resize: vertical;
+}
+
+form.stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 560px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge.status-REPORTED {
+  background: #fdecd2;
+  color: var(--warning);
+}
+.badge.status-UNDER_INVESTIGATION {
+  background: #dbe8fd;
+  color: var(--accent);
+}
+.badge.status-CHARGESHEETED {
+  background: #e6dcf7;
+  color: #6a3fb5;
+}
+.badge.status-CLOSED {
+  background: #dcf3e6;
+  color: var(--success);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.error-banner {
+  background: #fdecea;
+  color: var(--danger);
+  border: 1px solid #f5c6c0;
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  font-size: 0.88rem;
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, var(--primary-dark), var(--primary));
+}
+
+.login-card {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 2.25rem 2.25rem 2rem;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.login-card h1 {
+  font-size: 1.2rem;
+  margin: 0 0 0.25rem;
+}
+
+.login-card p.muted {
+  margin: 0 0 1.5rem;
+  font-size: 0.85rem;
+}
+
+.link-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.link-list li {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.link-list li:last-child {
+  border-bottom: none;
+}
+
+/* ---- Dashboard ---- */
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.1rem 1.25rem;
+}
+
+.stat-tile .stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.4rem;
+}
+
+.stat-tile .stat-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-tile .stat-delta {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.stat-tile .stat-delta.good {
+  color: var(--delta-good);
+}
+.stat-tile .stat-delta.bad {
+  color: var(--delta-bad);
+}
+.stat-tile .stat-delta.flat {
+  color: var(--text-muted);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 1.25rem;
+}
+
+.chart-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 0.2rem;
+}
+
+.chart-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+}
+
+/* Ranked (magnitude) bar chart — single sequential hue, direct value labels */
+.rbar-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 190px) 1fr 44px;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  font-size: 0.85rem;
+}
+.rbar-row.clickable {
+  cursor: pointer;
+  border-radius: 4px;
+}
+.rbar-row.clickable:hover {
+  background: #f5f7fb;
+}
+.rbar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.rbar-track {
+  background: var(--chart-sequential-soft);
+  border-radius: 4px;
+  height: 14px;
+  overflow: hidden;
+}
+.rbar-fill {
+  background: var(--chart-sequential);
+  height: 100%;
+  border-radius: 4px;
+  min-width: 3px;
+}
+.rbar-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Stacked status bar */
+.status-stack {
+  display: flex;
+  width: 100%;
+  height: 28px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.status-segment {
+  height: 100%;
+}
+.status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.9rem;
+  font-size: 0.83rem;
+}
+.status-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.status-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Line chart tooltip */
+.chart-tooltip {
+  position: absolute;
+  background: var(--primary-dark);
+  color: white;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  pointer-events: none;
+  transform: translate(-50%, -110%);
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.drill-breadcrumb {
+  font-size: 0.85rem;
+  margin-bottom: 0.6rem;
+  color: var(--text-muted);
+}
+.drill-breadcrumb button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+}
+
+/* ---- AI Intelligence: risk bands + heatmap ---- */
+
+.risk-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.risk-badge.risk-LOW {
+  background: #dcf3e6;
+  color: var(--success);
+}
+.risk-badge.risk-MEDIUM {
+  background: #fdecd2;
+  color: var(--warning);
+}
+.risk-badge.risk-HIGH {
+  background: #fde2d2;
+  color: #b3541a;
+}
+.risk-badge.risk-CRITICAL {
+  background: #fbdad8;
+  color: var(--danger);
+}
+
+.risk-bar-track {
+  background: var(--border);
+  border-radius: 4px;
+  height: 10px;
+  width: 100px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+.risk-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+.risk-bar-fill.risk-LOW {
+  background: var(--success);
+}
+.risk-bar-fill.risk-MEDIUM {
+  background: var(--warning);
+}
+.risk-bar-fill.risk-HIGH {
+  background: #b3541a;
+}
+.risk-bar-fill.risk-CRITICAL {
+  background: var(--danger);
+}
+
+.heatmap-table {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: 0.78rem;
+}
+.heatmap-table th {
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0.25rem 0.4rem;
+  text-align: center;
+}
+.heatmap-table td.heatmap-label {
+  text-align: left;
+  padding-right: 0.6rem;
+  white-space: nowrap;
+  color: var(--text);
+}
+.heatmap-cell {
+  width: 34px;
+  height: 26px;
+  text-align: center;
+  border-radius: 3px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.anomaly-direction {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.anomaly-direction.SPIKE {
+  color: var(--danger);
+}
+.anomaly-direction.DROP {
+  color: var(--accent);
+}
+
+/* ---- Reports ---- */
+
+.report-header {
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+.report-header h1 {
+  margin: 0 0 0.2rem;
+  font-size: 1.4rem;
+}
+.report-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.report-section {
+  margin-bottom: 1.5rem;
+}
+.report-section h2 {
+  font-size: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.4rem;
+  margin: 0 0 0.75rem;
+}
+
+/* Browser print → PDF: hide chrome, expand content to the full page,
+   strip screen-only shadows/backgrounds, keep tables/cards from splitting
+   mid-block across a page break. This is the entire "PDF export" mechanism
+   for this milestone — see Milestone 8 docs for why no server-side PDF
+   library was added for this. */
+@media print {
+  .topbar,
+  .no-print {
+    display: none !important;
+  }
+  body,
+  .layout,
+  .content {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  .card {
+    border: 1px solid #ccc;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  table {
+    break-inside: auto;
+  }
+  tr {
+    break-inside: avoid;
+  }
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+  .report-header {
+    border-bottom-color: #000;
+  }
+}

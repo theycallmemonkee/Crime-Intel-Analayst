@@ -1,0 +1,16 @@
+{
+  "name": "crime-intel-platform",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:core-api": "npm run start:dev --workspace apps/core-api",
+    "db:migrate": "npm run prisma:migrate --workspace apps/core-api",
+    "db:seed": "npm run seed --workspace apps/core-api",
+    "docker:up": "docker compose -f infra/docker-compose.yml up -d",
+    "docker:down": "docker compose -f infra/docker-compose.yml down"
+  }
+}

@@ -1,0 +1,278 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & Access
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  ANALYST
+  OFFICER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  fullName     String
+  role         Role
+  // Jurisdiction scoping: an Officer/Analyst is generally attached to one station/district.
+  // Admins and state-level Analysts may leave both null (state-wide access).
+  districtId   String?
+  district     District? @relation(fields: [districtId], references: [id])
+  stationId    String?
+  station      PoliceStation? @relation(fields: [stationId], references: [id])
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  firsFiled    Fir[]        @relation("FirFiledBy")
+  evidenceLogs Evidence[]   @relation("EvidenceCollectedBy")
+  auditLogs    AuditLog[]
+}
+
+// Append-only audit trail. Never updated/deleted by application code.
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String   // e.g. "CREATE", "UPDATE", "LOGIN"
+  entityType String   // e.g. "Crime", "Person"
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Jurisdiction — Districts & Police Stations (Karnataka)
+// ---------------------------------------------------------------------------
+
+model District {
+  id       String         @id @default(uuid())
+  name     String         @unique
+  code     String         @unique
+  stations PoliceStation[]
+  crimes   Crime[]
+  users    User[]
+}
+
+model PoliceStation {
+  id         String   @id @default(uuid())
+  name       String
+  code       String   @unique
+  districtId String
+  district   District @relation(fields: [districtId], references: [id])
+  latitude   Float
+  longitude  Float
+
+  crimes Crime[]
+  users  User[]
+
+  @@index([districtId])
+}
+
+// ---------------------------------------------------------------------------
+// Crime Data Management
+// ---------------------------------------------------------------------------
+
+model CrimeCategory {
+  id     String  @id @default(uuid())
+  name   String  @unique
+  // 1 (least severe) – 10 (most severe). A policy weight, not a learned
+  // value — used by Milestone 7's risk scoring to combine crime severity
+  // with frequency/recency. Lives on the category (data), not hardcoded in
+  // application code, so it can be tuned without a deploy.
+  severityWeight Int @default(5)
+  crimes Crime[]
+}
+
+enum InvestigationStatus {
+  REPORTED
+  UNDER_INVESTIGATION
+  CHARGESHEETED
+  CLOSED
+}
+
+model Crime {
+  id             String              @id @default(uuid())
+  categoryId     String
+  category       CrimeCategory       @relation(fields: [categoryId], references: [id])
+  districtId     String
+  district       District            @relation(fields: [districtId], references: [id])
+  stationId      String
+  station        PoliceStation       @relation(fields: [stationId], references: [id])
+  occurredAt     DateTime
+  reportedAt     DateTime            @default(now())
+  status         InvestigationStatus @default(REPORTED)
+  description    String
+  addressLine    String
+  latitude       Float
+  longitude      Float
+  // Generated PostGIS column (see migrations/*_add_postgis_geometry). Declared
+  // as `Unsupported` so Prisma Client never reads/writes it directly (that
+  // type is always excluded from the client automatically), but `migrate`
+  // still knows the column exists and won't propose dropping it.
+  geom           Unsupported("geometry(Point, 4326)")?
+
+  fir            Fir?
+  personLinks    CrimePerson[]
+  vehicleLinks   CrimeVehicle[]
+  weaponLinks    CrimeWeapon[]
+  evidenceItems  Evidence[]
+
+  createdAt DateTime @default(now())
+
+  @@index([districtId])
+  @@index([stationId])
+  @@index([categoryId])
+  @@index([occurredAt])
+}
+
+model Fir {
+  id          String   @id @default(uuid())
+  firNumber   String   @unique
+  crimeId     String   @unique
+  crime       Crime    @relation(fields: [crimeId], references: [id])
+  filedById   String
+  filedBy     User     @relation("FirFiledBy", fields: [filedById], references: [id])
+  narrative   String
+  dateFiled   DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Persons — a single identity table shared across suspect/victim/witness roles.
+//
+// Modeling suspects/victims/witnesses as one Person table (rather than three
+// separate tables) is deliberate: the platform's core value is finding links
+// across roles and across cases (e.g. a "witness" in one case who is a
+// "suspect" in another, or two crimes sharing a phone number/address). Three
+// separate tables would fragment identity and make that kind of query
+// unnecessarily hard. The per-crime *role* lives on the join table (CrimePerson),
+// not on the person.
+// ---------------------------------------------------------------------------
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Person {
+  id          String   @id @default(uuid())
+  fullName    String
+  alias       String?
+  gender      Gender
+  dateOfBirth DateTime?
+  phoneNumber String?
+  addressLine String?
+  ownedVehicles Vehicle[]
+  crimeLinks  CrimePerson[]
+
+  createdAt DateTime @default(now())
+
+  @@index([phoneNumber])
+  @@index([fullName])
+}
+
+enum CrimePersonRole {
+  SUSPECT
+  VICTIM
+  WITNESS
+}
+
+model CrimePerson {
+  id       String          @id @default(uuid())
+  crimeId  String
+  crime    Crime           @relation(fields: [crimeId], references: [id])
+  personId String
+  person   Person          @relation(fields: [personId], references: [id])
+  role     CrimePersonRole
+
+  @@unique([crimeId, personId, role])
+  @@index([personId])
+  @@index([crimeId])
+}
+
+// ---------------------------------------------------------------------------
+// Vehicles & Weapons
+// ---------------------------------------------------------------------------
+
+model Vehicle {
+  id                 String   @id @default(uuid())
+  registrationNumber String   @unique
+  type               String   // e.g. "Two-Wheeler", "Car", "Truck"
+  color              String?
+  ownerPersonId      String?
+  ownerPerson        Person?  @relation(fields: [ownerPersonId], references: [id])
+
+  crimeLinks CrimeVehicle[]
+}
+
+enum VehicleInvolvementRole {
+  USED_IN_CRIME
+  GETAWAY
+  STOLEN
+}
+
+model CrimeVehicle {
+  id        String                 @id @default(uuid())
+  crimeId   String
+  crime     Crime                  @relation(fields: [crimeId], references: [id])
+  vehicleId String
+  vehicle   Vehicle                @relation(fields: [vehicleId], references: [id])
+  role      VehicleInvolvementRole
+
+  @@unique([crimeId, vehicleId])
+}
+
+model Weapon {
+  id           String  @id @default(uuid())
+  type         String  // e.g. "Knife", "Firearm", "Blunt Object"
+  description  String?
+  serialNumber String?
+
+  crimeLinks CrimeWeapon[]
+}
+
+model CrimeWeapon {
+  id       String @id @default(uuid())
+  crimeId  String
+  crime    Crime  @relation(fields: [crimeId], references: [id])
+  weaponId String
+  weapon   Weapon @relation(fields: [weaponId], references: [id])
+
+  @@unique([crimeId, weaponId])
+}
+
+// ---------------------------------------------------------------------------
+// Evidence
+// ---------------------------------------------------------------------------
+
+enum EvidenceType {
+  PHOTO
+  DOCUMENT
+  DIGITAL
+  PHYSICAL_OBJECT
+  OTHER
+}
+
+model Evidence {
+  id            String       @id @default(uuid())
+  crimeId       String
+  crime         Crime        @relation(fields: [crimeId], references: [id])
+  type          EvidenceType
+  description   String
+  collectedById String
+  collectedBy   User         @relation("EvidenceCollectedBy", fields: [collectedById], references: [id])
+  collectedAt   DateTime     @default(now())
+  // Integrity hash placeholder — real file storage/hashing is out of scope
+  // for the prototype (no evidence file upload UI yet); the column exists so
+  // the chain-of-custody pattern is modeled even before it's wired up.
+  fileHash      String?
+}
