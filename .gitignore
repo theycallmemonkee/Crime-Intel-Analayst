@@ -57,6 +57,9 @@ infra/**/*.volume/
 .eslintcache
 .turbo/
 
+# Vercel
+.vercel/
+
 # Temporary files
 *.tmp
 *.temp
