@@ -1,4 +1,19 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+// localhost is only a valid fallback in dev (`next dev`, no .env.local
+// present yet) — silently falling back to it in a production build is
+// exactly how a deployed bundle ends up calling localhost from a real
+// browser. Production builds must have NEXT_PUBLIC_API_URL from
+// apps/web/.env.production (or a platform env var overriding it); if
+// it's somehow still missing, fail loudly at build/module-load time
+// instead of shipping a broken bundle.
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === 'production'
+    ? (() => {
+        throw new Error(
+          'NEXT_PUBLIC_API_URL is not set. Production builds must not fall back to localhost — set it in apps/web/.env.production or as a platform environment variable.',
+        );
+      })()
+    : 'http://localhost:3000');
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
