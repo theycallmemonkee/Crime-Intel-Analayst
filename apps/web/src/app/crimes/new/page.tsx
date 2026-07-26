@@ -59,7 +59,7 @@ export default function NewCrimePage() {
           firNarrative,
         },
       });
-      router.push(`/crimes/${crime.id}`);
+      router.push(`/crimes/view?id=${crime.id}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to create crime');
     } finally {

@@ -75,7 +75,7 @@ export default function ReportsIndexPage() {
               <button
                 className="btn"
                 disabled={!selectedDistrict}
-                onClick={() => router.push(`/reports/district/${selectedDistrict}`)}
+                onClick={() => router.push(`/reports/district/view?id=${selectedDistrict}`)}
               >
                 Open Report
               </button>
@@ -84,7 +84,7 @@ export default function ReportsIndexPage() {
             <button
               className="btn"
               disabled={!selectedDistrict}
-              onClick={() => router.push(`/reports/district/${selectedDistrict}`)}
+              onClick={() => router.push(`/reports/district/view?id=${selectedDistrict}`)}
             >
               Open Report for Your District
             </button>

@@ -25,7 +25,7 @@ export default function NewVehiclePage() {
         method: 'POST',
         body: { registrationNumber, type, color: color || undefined },
       });
-      router.push(`/vehicles/${vehicle.id}`);
+      router.push(`/vehicles/view?id=${vehicle.id}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to create vehicle');
     } finally {

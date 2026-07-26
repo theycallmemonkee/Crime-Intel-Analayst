@@ -14,6 +14,6 @@
     "docker:down": "docker compose -f infra/docker-compose.yml down",
     "build": "npm run build --workspace apps/web",
     "start": "npm run start --workspace apps/web",
-    "build:catalyst": "node scripts/build-catalyst-dist.js"
+    "build:slate": "node scripts/build-slate-dist.js"
   }
 }

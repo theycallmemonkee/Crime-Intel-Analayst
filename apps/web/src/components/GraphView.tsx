@@ -62,7 +62,7 @@ export function GraphView({
   nodes,
   edges,
   centerNodeId,
-  personLinkBase = '/persons',
+  personLinkBase = '/persons/view',
 }: {
   nodes: GraphViewNode[];
   edges: GraphViewEdge[];
@@ -221,7 +221,7 @@ export function GraphView({
       </div>
       {hoverId && nodes.find((n) => n.id === hoverId)?.type === 'PERSON' && (
         <p className="muted" style={{ marginTop: '0.4rem' }}>
-          <Link href={`${personLinkBase}/${hoverId}`}>View person record →</Link>
+          <Link href={`${personLinkBase}?id=${hoverId}`}>View person record →</Link>
         </p>
       )}
     </div>

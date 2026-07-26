@@ -59,7 +59,7 @@ export default function VehiclesListPage() {
               {vehicles.map((v) => (
                 <tr key={v.id}>
                   <td>
-                    <Link href={`/vehicles/${v.id}`}>{v.registrationNumber}</Link>
+                    <Link href={`/vehicles/view?id=${v.id}`}>{v.registrationNumber}</Link>
                   </td>
                   <td>{v.type}</td>
                   <td>{v.color ?? '—'}</td>

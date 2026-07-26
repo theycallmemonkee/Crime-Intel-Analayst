@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ProtectedShell } from '@/components/ProtectedShell';
 import { ReportHeader } from '@/components/ReportHeader';
 import { RiskBadge } from '@/components/RiskBadge';
@@ -9,8 +9,8 @@ import { useApi } from '@/lib/auth-context';
 import { ApiError } from '@/lib/api';
 import { DistrictReport } from '@/lib/types';
 
-export default function DistrictReportPage() {
-  const { id } = useParams<{ id: string }>();
+function DistrictReportPageInner() {
+  const id = useSearchParams().get('id');
   const api = useApi();
   const [report, setReport] = useState<DistrictReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -100,5 +100,13 @@ export default function DistrictReportPage() {
         </div>
       </div>
     </ProtectedShell>
+  );
+}
+
+export default function DistrictReportPage() {
+  return (
+    <Suspense fallback={<ProtectedShell><p className="muted">Generating report…</p></ProtectedShell>}>
+      <DistrictReportPageInner />
+    </Suspense>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { Suspense, useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ProtectedShell } from '@/components/ProtectedShell';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -23,8 +23,8 @@ const PERSON_ROLES: CrimePersonRole[] = ['SUSPECT', 'VICTIM', 'WITNESS'];
 const VEHICLE_ROLES: VehicleInvolvementRole[] = ['USED_IN_CRIME', 'GETAWAY', 'STOLEN'];
 const EVIDENCE_TYPES: EvidenceType[] = ['PHOTO', 'DOCUMENT', 'DIGITAL', 'PHYSICAL_OBJECT', 'OTHER'];
 
-export default function CrimeDetailPage() {
-  const { id } = useParams<{ id: string }>();
+function CrimeDetailPageInner() {
+  const id = useSearchParams().get('id');
   const api = useApi();
   const { user } = useAuth();
   const [crime, setCrime] = useState<CrimeDetail | null>(null);
@@ -64,7 +64,7 @@ export default function CrimeDetailPage() {
       <div className="page-header">
         <h1>{crime.fir?.firNumber}</h1>
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-          <Link href={`/reports/investigation/${crime.id}`} className="btn secondary">
+          <Link href={`/reports/investigation/view?id=${crime.id}`} className="btn secondary">
             Print Case File
           </Link>
           <StatusBadge status={crime.status} />
@@ -111,6 +111,14 @@ export default function CrimeDetailPage() {
       <WeaponsSection crime={crime} canWrite={canWrite} onChanged={load} api={api} />
       <EvidenceSection crime={crime} canWrite={canWrite} onChanged={load} api={api} />
     </ProtectedShell>
+  );
+}
+
+export default function CrimeDetailPage() {
+  return (
+    <Suspense fallback={<ProtectedShell><p className="muted">Loading…</p></ProtectedShell>}>
+      <CrimeDetailPageInner />
+    </Suspense>
   );
 }
 
@@ -171,7 +179,7 @@ function PersonsSection({
           {crime.personLinks.map((link) => (
             <tr key={link.id}>
               <td>
-                <Link href={`/persons/${link.person.id}`}>{link.person.fullName}</Link>
+                <Link href={`/persons/view?id=${link.person.id}`}>{link.person.fullName}</Link>
               </td>
               <td>{link.role}</td>
               <td>{link.person.phoneNumber ?? '—'}</td>
@@ -281,7 +289,7 @@ function VehiclesSection({
           {crime.vehicleLinks.map((link) => (
             <tr key={link.id}>
               <td>
-                <Link href={`/vehicles/${link.vehicle.id}`}>{link.vehicle.registrationNumber}</Link>
+                <Link href={`/vehicles/view?id=${link.vehicle.id}`}>{link.vehicle.registrationNumber}</Link>
               </td>
               <td>{link.vehicle.type}</td>
               <td>{link.role}</td>

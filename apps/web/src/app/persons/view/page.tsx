@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ProtectedShell } from '@/components/ProtectedShell';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -10,8 +10,8 @@ import { useApi, useAuth } from '@/lib/auth-context';
 import { ApiError } from '@/lib/api';
 import { EgoGraph, PersonDetail } from '@/lib/types';
 
-export default function PersonDetailPage() {
-  const { id } = useParams<{ id: string }>();
+function PersonDetailPageInner() {
+  const id = useSearchParams().get('id');
   const api = useApi();
   const { user } = useAuth();
   const [person, setPerson] = useState<PersonDetail | null>(null);
@@ -116,7 +116,7 @@ export default function PersonDetailPage() {
             {person.crimeLinks.map((link) => (
               <tr key={link.id}>
                 <td>
-                  <Link href={`/crimes/${link.crime.id}`}>{link.crime.fir?.firNumber ?? '—'}</Link>
+                  <Link href={`/crimes/view?id=${link.crime.id}`}>{link.crime.fir?.firNumber ?? '—'}</Link>
                 </td>
                 <td>{link.role}</td>
                 <td>{link.crime.category?.name}</td>
@@ -171,7 +171,7 @@ export default function PersonDetailPage() {
               {person.ownedVehicles.map((v) => (
                 <tr key={v.id}>
                   <td>
-                    <Link href={`/vehicles/${v.id}`}>{v.registrationNumber}</Link>
+                    <Link href={`/vehicles/view?id=${v.id}`}>{v.registrationNumber}</Link>
                   </td>
                   <td>{v.type}</td>
                 </tr>
@@ -181,5 +181,13 @@ export default function PersonDetailPage() {
         </div>
       )}
     </ProtectedShell>
+  );
+}
+
+export default function PersonDetailPage() {
+  return (
+    <Suspense fallback={<ProtectedShell><p className="muted">Loading…</p></ProtectedShell>}>
+      <PersonDetailPageInner />
+    </Suspense>
   );
 }

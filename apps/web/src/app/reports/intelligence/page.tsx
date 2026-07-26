@@ -125,7 +125,7 @@ export default function IntelligenceReportPage() {
           <tbody>
             {report.repeatOffenders.map((r) => (
               <tr key={r.personId}>
-                <td><Link href={`/persons/${r.personId}`}>{r.fullName}</Link></td>
+                <td><Link href={`/persons/view?id=${r.personId}`}>{r.fullName}</Link></td>
                 <td>{r.crimeCount}</td>
               </tr>
             ))}

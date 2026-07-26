@@ -37,7 +37,7 @@ export default function NewPersonPage() {
           addressLine: addressLine || undefined,
         },
       });
-      router.push(`/persons/${person.id}`);
+      router.push(`/persons/view?id=${person.id}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to create person');
     } finally {

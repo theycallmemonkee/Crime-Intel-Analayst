@@ -61,7 +61,7 @@ export default function PersonsListPage() {
               {people.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <Link href={`/persons/${p.id}`}>{p.fullName}</Link>
+                    <Link href={`/persons/view?id=${p.id}`}>{p.fullName}</Link>
                   </td>
                   <td>{p.alias ?? '—'}</td>
                   <td>{p.gender}</td>

@@ -289,7 +289,7 @@ export default function IntelligencePage() {
               {riskScores.map((r) => (
                 <tr key={r.personId}>
                   <td>
-                    <Link href={`/persons/${r.personId}`}>{r.fullName}</Link>
+                    <Link href={`/persons/view?id=${r.personId}`}>{r.fullName}</Link>
                   </td>
                   <td>{r.crimeCount}</td>
                   <td>{r.avgSeverity}/10</td>

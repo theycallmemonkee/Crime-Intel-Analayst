@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ProtectedShell } from '@/components/ProtectedShell';
 import { ReportHeader } from '@/components/ReportHeader';
@@ -10,17 +10,17 @@ import { useApi } from '@/lib/auth-context';
 import { ApiError } from '@/lib/api';
 import { InvestigationReport } from '@/lib/types';
 
-export default function InvestigationReportPage() {
-  const { crimeId } = useParams<{ crimeId: string }>();
+function InvestigationReportPageInner() {
+  const id = useSearchParams().get('id');
   const api = useApi();
   const [report, setReport] = useState<InvestigationReport | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api<InvestigationReport>(`/reports/investigation/${crimeId}`)
+    api<InvestigationReport>(`/reports/investigation/${id}`)
       .then(setReport)
       .catch((e) => setError(e instanceof ApiError ? e.message : 'Failed to load report'));
-  }, [crimeId]);
+  }, [id]);
 
   if (error) return <ProtectedShell><div className="error-banner">{error}</div></ProtectedShell>;
   if (!report) return <ProtectedShell><p className="muted">Generating report…</p></ProtectedShell>;
@@ -64,7 +64,7 @@ export default function InvestigationReportPage() {
           <tbody>
             {crime.personLinks.map((l) => (
               <tr key={l.id}>
-                <td><Link href={`/persons/${l.person.id}`}>{l.person.fullName}</Link></td>
+                <td><Link href={`/persons/view?id=${l.person.id}`}>{l.person.fullName}</Link></td>
                 <td>{l.role}</td>
                 <td>{l.person.phoneNumber ?? '—'}</td>
                 <td>{l.person.addressLine ?? '—'}</td>
@@ -122,5 +122,13 @@ export default function InvestigationReportPage() {
         </table>
       </div>
     </ProtectedShell>
+  );
+}
+
+export default function InvestigationReportPage() {
+  return (
+    <Suspense fallback={<ProtectedShell><p className="muted">Generating report…</p></ProtectedShell>}>
+      <InvestigationReportPageInner />
+    </Suspense>
   );
 }

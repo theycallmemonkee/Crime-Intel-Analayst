@@ -7,12 +7,16 @@ const nextConfig = {
   // unrelated project) has its own package-lock.json, which Next.js would
   // otherwise mistake for the monorepo root.
   outputFileTracingRoot: path.join(__dirname, '../../'),
-  // Emits .next/standalone: a self-contained server (server.js + pruned
-  // node_modules) instead of requiring `next start` + a full node_modules
-  // on the host. Needed for Node-runtime deploy targets (e.g. Zoho Catalyst
-  // AppSail) that run a prebuilt artifact rather than installing and
-  // building on their own. Doesn't change `next dev` or `next start`.
-  output: 'standalone',
+  // Static HTML export: every route is a client component with no
+  // server-only features (no API routes, no middleware, no dynamic
+  // segments without generateStaticParams — see app/*/view/page.tsx for
+  // the query-string-based replacements for the old [id] routes), so this
+  // works with zero functional loss. Needed for static-only hosts (e.g.
+  // Zoho Catalyst Slate); Vercel serves a static export natively too.
+  output: 'export',
+  // next/image's optimizer requires a running server; unused here (no
+  // next/image in the app) but set for correctness under static export.
+  images: { unoptimized: true },
 };
 
 module.exports = nextConfig;

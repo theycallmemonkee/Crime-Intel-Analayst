@@ -101,7 +101,7 @@ export default function NetworkPage() {
                 <Fragment key={r.personId}>
                   <tr>
                     <td>
-                      <Link href={`/persons/${r.personId}`}>{r.fullName}</Link>
+                      <Link href={`/persons/view?id=${r.personId}`}>{r.fullName}</Link>
                     </td>
                     <td>{r.crimeCount}</td>
                     <td>
@@ -129,7 +129,7 @@ export default function NetworkPage() {
                             {r.crimes.map((c) => (
                               <tr key={c.id}>
                                 <td>
-                                  <Link href={`/crimes/${c.id}`}>{c.firNumber ?? '—'}</Link>
+                                  <Link href={`/crimes/view?id=${c.id}`}>{c.firNumber ?? '—'}</Link>
                                 </td>
                                 <td>{c.category}</td>
                                 <td>{c.station}</td>
@@ -173,10 +173,10 @@ export default function NetworkPage() {
               {hiddenAssociations.map((h, i) => (
                 <tr key={i}>
                   <td>
-                    <Link href={`/persons/${h.person1.id}`}>{h.person1.fullName}</Link>
+                    <Link href={`/persons/view?id=${h.person1.id}`}>{h.person1.fullName}</Link>
                   </td>
                   <td>
-                    <Link href={`/persons/${h.person2.id}`}>{h.person2.fullName}</Link>
+                    <Link href={`/persons/view?id=${h.person2.id}`}>{h.person2.fullName}</Link>
                   </td>
                   <td>{VIA_LABELS[h.via]}</td>
                   <td>{h.sharedValue}</td>

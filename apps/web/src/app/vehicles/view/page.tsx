@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ProtectedShell } from '@/components/ProtectedShell';
 import { useApi } from '@/lib/auth-context';
 import { ApiError } from '@/lib/api';
 import { VehicleDetail } from '@/lib/types';
 
-export default function VehicleDetailPage() {
-  const { id } = useParams<{ id: string }>();
+function VehicleDetailPageInner() {
+  const id = useSearchParams().get('id');
   const api = useApi();
   const [vehicle, setVehicle] = useState<VehicleDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +36,7 @@ export default function VehicleDetailPage() {
         <p className="muted">
           Owner:{' '}
           {vehicle.ownerPerson ? (
-            <Link href={`/persons/${vehicle.ownerPerson.id}`}>{vehicle.ownerPerson.fullName}</Link>
+            <Link href={`/persons/view?id=${vehicle.ownerPerson.id}`}>{vehicle.ownerPerson.fullName}</Link>
           ) : (
             'Unknown'
           )}
@@ -57,7 +57,7 @@ export default function VehicleDetailPage() {
             {vehicle.crimeLinks.map((link) => (
               <tr key={link.id}>
                 <td>
-                  <Link href={`/crimes/${link.crime.id}`}>{link.crime.fir?.firNumber ?? '—'}</Link>
+                  <Link href={`/crimes/view?id=${link.crime.id}`}>{link.crime.fir?.firNumber ?? '—'}</Link>
                 </td>
                 <td>{link.role}</td>
                 <td>{link.crime.category?.name}</td>
@@ -74,5 +74,13 @@ export default function VehicleDetailPage() {
         </table>
       </div>
     </ProtectedShell>
+  );
+}
+
+export default function VehicleDetailPage() {
+  return (
+    <Suspense fallback={<ProtectedShell><p className="muted">Loading…</p></ProtectedShell>}>
+      <VehicleDetailPageInner />
+    </Suspense>
   );
 }

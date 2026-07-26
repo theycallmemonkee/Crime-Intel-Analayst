@@ -163,7 +163,7 @@ export default function CrimesListPage() {
                 {data?.items.map((c) => (
                   <tr key={c.id}>
                     <td>
-                      <Link href={`/crimes/${c.id}`}>{c.fir?.firNumber ?? '—'}</Link>
+                      <Link href={`/crimes/view?id=${c.id}`}>{c.fir?.firNumber ?? '—'}</Link>
                     </td>
                     <td>{c.category?.name}</td>
                     <td>
