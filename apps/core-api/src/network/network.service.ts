@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import neo4j from 'neo4j-driver';
 import { Neo4jService } from '../neo4j/neo4j.service';
 import { PrismaService } from '../prisma/prisma.service';
+
+const GDS_PROCEDURE_NOT_FOUND = 'Neo.ClientError.Procedure.ProcedureNotFound';
 
 // Cypher's LIMIT (and similar integer-typed positions) rejects a Float —
 // and the driver sends plain JS numbers as Float by default. Every
@@ -28,6 +30,8 @@ export interface Graph {
 
 @Injectable()
 export class NetworkService {
+  private readonly logger = new Logger(NetworkService.name);
+
   constructor(
     private neo4j: Neo4jService,
     private prisma: PrismaService,
@@ -153,6 +157,20 @@ export class NetworkService {
   // as two separate features, since under the hood they're the same
   // algorithm over the same graph (see Milestone 6 docs).
   async gangs(minSize: number) {
+    try {
+      return await this.gangsViaGds(minSize);
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code !== GDS_PROCEDURE_NOT_FOUND) throw err;
+      this.logger.warn(
+        `GDS procedure unavailable (${(err as Error).message}) — falling back to a pure-Cypher ` +
+          `connected-components implementation for gang detection.`,
+      );
+      return this.gangsViaConnectedComponents(minSize);
+    }
+  }
+
+  private async gangsViaGds(minSize: number) {
     // Best-effort cleanup in case a previous call left the projection behind
     // (e.g. the process crashed mid-request) — GDS refuses to re-project a
     // name that already exists.
@@ -187,9 +205,92 @@ export class NetworkService {
       members: r.get('members') as { id: string; fullName: string }[],
     }));
 
-    // Pull the CO_SUSPECT edges among each community's own members, so the
-    // frontend can render an actual node-link diagram, not just a member list.
-    const results = await Promise.all(
+    return this.attachIntraGroupEdges(groups);
+  }
+
+  // GDS-free substitute for gangs() when the GDS plugin isn't installed —
+  // connected components (union-find) over the same CO_SUSPECT graph,
+  // computed in application code from one plain Cypher MATCH. This is a
+  // genuinely different, simpler algorithm from Louvain (no modularity
+  // optimization — Louvain can split one connected component into several
+  // tighter-knit communities; this returns whole components), not an
+  // approximation of it. Still a correct answer to "who's transitively
+  // linked by shared-crime co-suspicion", just less granular.
+  private async gangsViaConnectedComponents(minSize: number) {
+    const edgeResult = await this.neo4j.run(
+      `MATCH (p1:Person)-[r:CO_SUSPECT]-(p2:Person)
+       WHERE p1.id < p2.id
+       RETURN p1.id AS source, p1.fullName AS sourceName,
+              p2.id AS target, p2.fullName AS targetName,
+              r.sharedCrimeCount AS weight`,
+    );
+
+    const edges = edgeResult.records.map((r) => ({
+      source: r.get('source') as string,
+      sourceName: r.get('sourceName') as string,
+      target: r.get('target') as string,
+      targetName: r.get('targetName') as string,
+      weight: r.get('weight') as number,
+    }));
+
+    const parent = new Map<string, string>();
+    const names = new Map<string, string>();
+    const find = (x: string): string => {
+      while (parent.get(x) !== x) {
+        const p = parent.get(x) as string;
+        parent.set(x, parent.get(p) as string);
+        x = p;
+      }
+      return x;
+    };
+    const union = (a: string, b: string) => {
+      const ra = find(a);
+      const rb = find(b);
+      if (ra !== rb) parent.set(ra, rb);
+    };
+    const ensure = (id: string, name: string) => {
+      if (!parent.has(id)) {
+        parent.set(id, id);
+        names.set(id, name);
+      }
+    };
+
+    edges.forEach((e) => {
+      ensure(e.source, e.sourceName);
+      ensure(e.target, e.targetName);
+      union(e.source, e.target);
+    });
+
+    const componentMembers = new Map<string, { id: string; fullName: string }[]>();
+    for (const id of parent.keys()) {
+      const root = find(id);
+      const arr = componentMembers.get(root) ?? [];
+      arr.push({ id, fullName: names.get(id) as string });
+      componentMembers.set(root, arr);
+    }
+
+    const groups = Array.from(componentMembers.values())
+      .map((members, i) => ({ communityId: i, members }))
+      .filter((g) => g.members.length >= minSize)
+      .sort((a, b) => b.members.length - a.members.length);
+
+    return groups.map((g) => {
+      const memberIds = new Set(g.members.map((m) => m.id));
+      return {
+        communityId: g.communityId,
+        size: g.members.length,
+        members: g.members,
+        edges: edges
+          .filter((e) => memberIds.has(e.source) && memberIds.has(e.target))
+          .map((e) => ({ source: e.source, target: e.target, weight: e.weight })),
+      };
+    });
+  }
+
+  // Pulls the CO_SUSPECT edges among each group's own members, so the
+  // frontend can render an actual node-link diagram, not just a member list.
+  private async attachIntraGroupEdges(groups: { communityId: number; members: { id: string; fullName: string }[] }[]) {
+    return Promise.all(
       groups.map(async (g) => {
         const memberIds = g.members.map((m) => m.id);
         const edgeResult = await this.neo4j.run(
@@ -210,8 +311,6 @@ export class NetworkService {
         };
       }),
     );
-
-    return results;
   }
 
   // --- Person ego-graph (link chart) ---------------------------------------
@@ -227,7 +326,7 @@ export class NetworkService {
     const personResult = await this.neo4j.run(`MATCH (p:Person {id: $personId}) RETURN p.fullName AS fullName`, {
       personId,
     });
-    if (personResult.records.length === 0) return { nodes: [], edges: [] };
+    if (personResult.records.length === 0) throw new NotFoundException(`Person ${personId} not found`);
     nodes.set(personId, { id: personId, label: personResult.records[0].get('fullName'), type: 'PERSON' });
 
     const crimeResult = await this.neo4j.run(
