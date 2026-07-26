@@ -10,10 +10,12 @@ build/
 out/
 *.tsbuildinfo
 
-# Environment variables (keep .env.example tracked)
+# Environment variables (keep .env.example and the web app's committed
+# .env.production tracked — see apps/web/.env.production for why)
 .env
 .env.*
 !.env.example
+!apps/web/.env.production
 
 # Logs
 logs/
